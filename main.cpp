@@ -3,19 +3,26 @@
 #include <stdexcept>
 
 template <typename T>
-struct Node {
+struct SinglyNode {
     T data;
-    std::shared_ptr<Node<T>> next;
-    std::weak_ptr<Node<T>> prev;
+    std::shared_ptr<SinglyNode<T>> next;
 
-    Node(T value) : data(value), next(nullptr), prev() {}
+    SinglyNode(T value) : data(value), next(nullptr) {}
+};
+
+template <typename T>
+struct DoublyNode {
+    T data;
+    std::shared_ptr<DoublyNode<T>> next;
+    std::weak_ptr<DoublyNode<T>> prev;
+
+    DoublyNode(T value) : data(value), next(nullptr), prev() {}
 };
 
 template <typename T>
 class SinglyLinkedList {
 private:
-    std::shared_ptr<Node<T>> head;
-    std::shared_ptr<Node<T>> tail;
+    std::shared_ptr<SinglyNode<T>> head;
     size_t size = 0;
 
 public:
@@ -23,20 +30,20 @@ public:
     size_t getSize() const { return size; }
 
     void pushFront(T value) {
-        auto newNode = std::make_shared<Node<T>>(value);
+        auto newNode = std::make_shared<SinglyNode<T>>(value);
         newNode->next = head;
         head = newNode;
-        if (!tail) tail = head;
         ++size;
     }
 
     void pushBack(T value) {
-        auto newNode = std::make_shared<Node<T>>(value);
+        auto newNode = std::make_shared<SinglyNode<T>>(value);
         if (!head) {
-            head = tail = newNode;
+            head = newNode;
         } else {
-            tail->next = newNode;
-            tail = newNode;
+            auto current = head;
+            while (current->next) current = current->next;
+            current->next = newNode;
         }
         ++size;
     }
@@ -44,19 +51,17 @@ public:
     void popFront() {
         if (isEmpty()) throw std::out_of_range("List is empty");
         head = head->next;
-        if (!head) tail = nullptr;
         --size;
     }
 
     void popBack() {
         if (isEmpty()) throw std::out_of_range("List is empty");
         if (size == 1) {
-            head = tail = nullptr;
+            head = nullptr;
         } else {
             auto current = head;
-            while (current->next != tail) current = current->next;
+            while (current->next->next) current = current->next;
             current->next = nullptr;
-            tail = current;
         }
         --size;
     }
@@ -73,12 +78,11 @@ public:
         if (index == 0) {
             pushFront(value);
         } else {
-            auto newNode = std::make_shared<Node<T>>(value);
+            auto newNode = std::make_shared<SinglyNode<T>>(value);
             auto current = head;
             for (size_t i = 0; i < index - 1; ++i) current = current->next;
             newNode->next = current->next;
             current->next = newNode;
-            if (!newNode->next) tail = newNode;
             ++size;
         }
     }
@@ -91,7 +95,6 @@ public:
             auto current = head;
             for (size_t i = 0; i < index - 1; ++i) current = current->next;
             current->next = current->next->next;
-            if (!current->next) tail = current;
             --size;
         }
     }
@@ -120,8 +123,8 @@ public:
 template <typename T>
 class DoublyLinkedList {
 private:
-    std::shared_ptr<Node<T>> head;
-    std::shared_ptr<Node<T>> tail;
+    std::shared_ptr<DoublyNode<T>> head;
+    std::shared_ptr<DoublyNode<T>> tail;
     size_t size = 0;
 
 public:
@@ -129,16 +132,16 @@ public:
     size_t getSize() const { return size; }
 
     void pushFront(T value) {
-        auto newNode = std::make_shared<Node<T>>(value);
+        auto newNode = std::make_shared<DoublyNode<T>>(value);
         newNode->next = head;
         if (head) head->prev = newNode;
         head = newNode;
-        if (!tail) tail = head;
+        if (!tail) tail = newNode;
         ++size;
     }
 
     void pushBack(T value) {
-        auto newNode = std::make_shared<Node<T>>(value);
+        auto newNode = std::make_shared<DoublyNode<T>>(value);
         newNode->prev = tail;
         if (tail) tail->next = newNode;
         tail = newNode;
@@ -176,7 +179,7 @@ public:
         } else if (index == size) {
             pushBack(value);
         } else {
-            auto newNode = std::make_shared<Node<T>>(value);
+            auto newNode = std::make_shared<DoublyNode<T>>(value);
             auto current = head;
             for (size_t i = 0; i < index; ++i) current = current->next;
             newNode->next = current;
@@ -225,18 +228,16 @@ public:
 
 int main() {
     SinglyLinkedList<int> sList;
-    sList.pushBack(10);
-    sList.pushFront(5);
-    sList.pushBack(8);
-    sList.pushFront(9);
-    sList.insert(0, 7);
+    sList.pushBack(1);
+    sList.pushBack(2);
+    sList.pushBack(3);
     sList.print();
 
     DoublyLinkedList<std::string> dList;
-    dList.pushBack("Hello");
-    dList.pushBack("World");
+    dList.pushFront("World");
+    dList.pushFront("Hello");
     dList.insert(1, "Goodbye");
     dList.print();
-
     return 0;
 }
+
